@@ -9,7 +9,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.figure_factory as ff
 
-access_token = 'eyJwcm9qZWN0X2lkIjogIlN5bm1heCBjb21tZXJjaWFsIEFQSSIsICJwcml2YXRlX2tleSI6ICJGcXEyWVJyQWJIaWtpSEpPa3ZyejdVNERKNDhMaUFLS2tfVlF3NUpTSzVrIiwgImNsaWVudF9pZCI6ICJDU1UiLCAidHlwZSI6ICJvbmVfeWVhcl9saWNlbnNlZF9jdXN0b21lciIsICJzdGFydF9kYXRlIjogIjA1LzI3LzIwMjIiLCAiZW5kX2RhdGUiOiAiMDUvMjcvMjAyMyIsICJ0cmlhbF9saWNlbnNlIjogZmFsc2UsICJpc3N1ZV9kYXRldGltZSI6ICIyNy0wNS0yMDIyIDE1OjE2OjA3In0='
+access_token = '****************************************************'
 client = HyperionApiClient(access_token=access_token)
 
 payload = ApiPayload(start_date='2021-01-01', end_date='2022-09-01', state_code='TX', production_month=2)
