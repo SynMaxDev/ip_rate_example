@@ -1,57 +1,36 @@
 """Install SynMax Python Client"""
-
-pip install --upgrade synmax-api-python-client
-
+# pip install --upgrade synmax-api-python-client
 """Install other Dependencies"""
-
-pip install wheel pandas tqdm plotly-geo plotly geopandas==0.8.1 pyshp shapely
+# pip install plotly-geo plotly geopandas==0.8.1 pyshp shapely
 
 """Query the production data"""
-
-from synmax.hyperion import HyperionApiClient, ApiPayload
-import calendar
+from synmax.hyperion import HyperionApiClient, ApiPayload, add_daily, get_fips
 import pandas as pd
 import plotly.express as px
 import plotly.figure_factory as ff
 
-access_token = '*****************************'
+access_token = 'eyJwcm9qZWN0X2lkIjogIlN5bm1heCBjb21tZXJjaWFsIEFQSSIsICJwcml2YXRlX2tleSI6ICJGcXEyWVJyQWJIaWtpSEpPa3ZyejdVNERKNDhMaUFLS2tfVlF3NUpTSzVrIiwgImNsaWVudF9pZCI6ICJDU1UiLCAidHlwZSI6ICJvbmVfeWVhcl9saWNlbnNlZF9jdXN0b21lciIsICJzdGFydF9kYXRlIjogIjA1LzI3LzIwMjIiLCAiZW5kX2RhdGUiOiAiMDUvMjcvMjAyMyIsICJ0cmlhbF9saWNlbnNlIjogZmFsc2UsICJpc3N1ZV9kYXRldGltZSI6ICIyNy0wNS0yMDIyIDE1OjE2OjA3In0='
 client = HyperionApiClient(access_token=access_token)
 
 payload = ApiPayload(start_date='2021-01-01', end_date='2022-09-01', state_code='TX', production_month=2)
 df = client.production_by_well(payload)
 
 """convert to mcf/d"""
-
-def make_mcf_d(x):
-  date_ = pd.to_datetime(x.date)
-  days = calendar.monthlen(date_.year, date_.month)
-
-  return x.gas_monthly/days
-
-df['gas_daily'] = df.apply(make_mcf_d, axis=1)
+df = add_daily(df)
 
 """examine county-level histograms"""
-
 fig = px.histogram(df[df.county=='Midland'], x='gas_daily')
 fig.show()
 
-"""calculate average per county"""
-
+"""County level Map"""
 county_df = df[['state_ab', 'county', 'gas_daily']].groupby(['state_ab', 'county'], as_index=False).mean()
 
-"""Get FIPS code Lookup Table"""
-
-fips_df = pd.read_csv('https://raw.githubusercontent.com/kjhealy/fips-codes/master/state_and_county_fips_master.csv')
-fips_df['name'] = fips_df.apply(lambda x: x['name'].replace(' County', '').replace(' Parish', ''), axis=1)
-fips_df.columns = ['fips', 'county', 'state']
-
-"""merge fips_df with county_df"""
-county_df = county_df.merge(fips_df[fips_df.state.=='TX'], how='right', left_on=['state_ab','county'], right_on=['state', 'county'])
+fips_df = get_fips()
+county_df['county'] = county_df['county'].str.upper()
+county_df = county_df.merge(fips_df[fips_df.state_ab == 'TX'], how='right', on=['state_ab','county'])
 county_df['gas_daily'] = county_df['gas_daily'].fillna(0)
 
-"""Create county map"""
-
-fig = ff.create_choropleth(fips=county_df.fips.tolist(), 
+fig = ff.create_choropleth(fips=county_df.fips.tolist(),
                            values=county_df.gas_daily.tolist(),
                            county_outline={'color': 'rgb(255,255,255)', 'width': 0.5},
                            scope=['TX'],
